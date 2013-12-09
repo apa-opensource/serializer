@@ -27,295 +27,285 @@ use JMS\Serializer\Metadata\ClassMetadata;
 
 class XmlDeserializationVisitor extends AbstractVisitor
 {
-    private $objectStack;
-    private $metadataStack;
-    private $currentObject;
-    private $currentMetadata;
-    private $result;
-    private $navigator;
-    private $disableExternalEntities = true;
-    private $doctypeWhitelist = array();
+	private $objectStack;
+	private $metadataStack;
+	private $currentObject;
+	private $currentMetadata;
+	private $result;
+	private $navigator;
+	private $disableExternalEntities = true;
+	private $doctypeWhitelist = array();
 
-    public function enableExternalEntities()
-    {
-        $this->disableExternalEntities = false;
-    }
+	public function enableExternalEntities()
+	{
+		$this->disableExternalEntities = false;
+	}
 
-    public function setNavigator(GraphNavigator $navigator)
-    {
-        $this->navigator = $navigator;
-        $this->objectStack = new \SplStack;
-        $this->metadataStack = new \SplStack;
-        $this->result = null;
-    }
+	public function setNavigator(GraphNavigator $navigator)
+	{
+		$this->navigator = $navigator;
+		$this->objectStack = new \SplStack;
+		$this->metadataStack = new \SplStack;
+		$this->result = null;
+	}
 
-    public function getNavigator()
-    {
-        return $this->navigator;
-    }
+	public function getNavigator()
+	{
+		return $this->navigator;
+	}
 
-    public function prepare($data)
-    {
-        $previous = libxml_use_internal_errors(true);
-        $previousEntityLoaderState = libxml_disable_entity_loader($this->disableExternalEntities);
+	public function prepare($data)
+	{
+		$previous = libxml_use_internal_errors(true);
+		$previousEntityLoaderState = libxml_disable_entity_loader($this->disableExternalEntities);
 
-        $dom = new \DOMDocument();
-        $dom->loadXML($data);
-        foreach ($dom->childNodes as $child) {
-            if ($child->nodeType === XML_DOCUMENT_TYPE_NODE) {
-                $internalSubset = str_replace(array("\n", "\r"), '', $child->internalSubset);
-                if (!in_array($internalSubset, $this->doctypeWhitelist, true)) {
-                    throw new InvalidArgumentException(sprintf(
-                        'The document type "%s" is not allowed. If it is safe, you may add it to the whitelist configuration.',
-                        $internalSubset
-                    ));
-                }
-            }
-        }
+		$dom = new \DOMDocument();
+		$dom->loadXML($data);
+		foreach ($dom->childNodes as $child) {
+			if ($child->nodeType === XML_DOCUMENT_TYPE_NODE) {
+				$internalSubset = str_replace(array("\n", "\r"), '', $child->internalSubset);
+				if (!in_array($internalSubset, $this->doctypeWhitelist, true)) {
+					throw new InvalidArgumentException(sprintf(
+						'The document type "%s" is not allowed. If it is safe, you may add it to the whitelist configuration.',
+						$internalSubset
+					));
+				}
+			}
+		}
 
-        $doc = simplexml_load_string($data);
-        libxml_use_internal_errors($previous);
-        libxml_disable_entity_loader($previousEntityLoaderState);
+		$doc = simplexml_load_string($data);
+		libxml_use_internal_errors($previous);
+		libxml_disable_entity_loader($previousEntityLoaderState);
 
-        if (false === $doc) {
-            throw new XmlErrorException(libxml_get_last_error());
-        }
+		if (false === $doc) {
+			throw new XmlErrorException(libxml_get_last_error());
+		}
 
-        return $doc;
-    }
+		return $doc;
+	}
 
-    public function visitNull($data, array $type, Context $context)
-    {
-        return null;
-    }
+	public function visitNull($data, array $type, Context $context)
+	{
+		return null;
+	}
 
-    public function visitString($data, array $type, Context $context)
-    {
-        $data = (string) $data;
+	public function visitString($data, array $type, Context $context)
+	{
+		$data = (string) $data;
 
-        if (null === $this->result) {
-            $this->result = $data;
-        }
+		if (null === $this->result) {
+			$this->result = $data;
+		}
 
-        return $data;
-    }
+		return $data;
+	}
 
-    public function visitBoolean($data, array $type, Context $context)
-    {
-        $data = (string) $data;
+	public function visitBoolean($data, array $type, Context $context)
+	{
+		$data = (string) $data;
 
-        if ('true' === $data) {
-            $data = true;
-        } elseif ('false' === $data) {
-            $data = false;
-        } else {
-            throw new RuntimeException(sprintf('Could not convert data to boolean. Expected "true", or "false", but got %s.', json_encode($data)));
-        }
+		if ('true' === $data) {
+			$data = true;
+		} elseif ('false' === $data) {
+			$data = false;
+		} else {
+			throw new RuntimeException(sprintf('Could not convert data to boolean. Expected "true", or "false", but got %s.', json_encode($data)));
+		}
 
-        if (null === $this->result) {
-            $this->result = $data;
-        }
+		if (null === $this->result) {
+			$this->result = $data;
+		}
 
-        return $data;
-    }
+		return $data;
+	}
 
-    public function visitInteger($data, array $type, Context $context)
-    {
-        $data = (integer) $data;
+	public function visitInteger($data, array $type, Context $context)
+	{
+		$data = (integer) $data;
 
-        if (null === $this->result) {
-            $this->result = $data;
-        }
+		if (null === $this->result) {
+			$this->result = $data;
+		}
 
-        return $data;
-    }
+		return $data;
+	}
 
-    public function visitDouble($data, array $type, Context $context)
-    {
-        $data = (double) $data;
+	public function visitDouble($data, array $type, Context $context)
+	{
+		$data = (double) $data;
 
-        if (null === $this->result) {
-            $this->result = $data;
-        }
+		if (null === $this->result) {
+			$this->result = $data;
+		}
 
-        return $data;
-    }
+		return $data;
+	}
 
-    public function visitArray($data, array $type, Context $context)
-    {
-        $entryName = null !== $this->currentMetadata && $this->currentMetadata->xmlEntryName ? $this->currentMetadata->xmlEntryName : 'entry';
+	public function visitArray($data, array $type, Context $context)
+	{
+		$entryName = null !== $this->currentMetadata && $this->currentMetadata->xmlEntryName ? $this->currentMetadata->xmlEntryName : 'entry';
 
-        if ( ! isset($data->$entryName)) {
-            if (null === $this->result) {
-                return $this->result = array();
-            }
+		if ( ! isset($data->$entryName)) {
+			if (null === $this->result) {
+				return $this->result = array();
+			}
 
-            return array();
-        }
+			return array();
+		}
 
-        switch (count($type['params'])) {
-            case 0:
-                throw new RuntimeException(sprintf('The array type must be specified either as "array<T>", or "array<K,V>".'));
+		switch (count($type['params'])) {
+			case 0:
+				throw new RuntimeException(sprintf('The array type must be specified either as "array<T>", or "array<K,V>".'));
 
-            case 1:
-                $result = array();
-                if (null === $this->result) {
-                    $this->result = &$result;
-                }
+			case 1:
+				$result = array();
+				if (null === $this->result) {
+					$this->result = &$result;
+				}
 
-                foreach ($data->$entryName as $v) {
-                    $result[] = $this->navigator->accept($v, $type['params'][0], $context);
-                }
+				foreach ($data->$entryName as $v) {
+					$result[] = $this->navigator->accept($v, $type['params'][0], $context);
+				}
 
-                return $result;
+				return $result;
 
-            case 2:
-                if (null === $this->currentMetadata) {
-                    throw new RuntimeException('Maps are not supported on top-level without metadata.');
-                }
+			case 2:
+				if (null === $this->currentMetadata) {
+					throw new RuntimeException('Maps are not supported on top-level without metadata.');
+				}
 
-                list($keyType, $entryType) = $type['params'];
-                $result = array();
-                if (null === $this->result) {
-                    $this->result = &$result;
-                }
+				list($keyType, $entryType) = $type['params'];
+				$result = array();
+				if (null === $this->result) {
+					$this->result = &$result;
+				}
 
-                foreach ($data->$entryName as $v) {
-                    if (!isset($v[$this->currentMetadata->xmlKeyAttribute])) {
-                        throw new RuntimeException(sprintf('The key attribute "%s" must be set for each entry of the map.', $this->currentMetadata->xmlKeyAttribute));
-                    }
+				foreach ($data->$entryName as $v) {
+					if (!isset($v[$this->currentMetadata->xmlKeyAttribute])) {
+						throw new RuntimeException(sprintf('The key attribute "%s" must be set for each entry of the map.', $this->currentMetadata->xmlKeyAttribute));
+					}
 
-                    $k = $this->navigator->accept($v[$this->currentMetadata->xmlKeyAttribute], $keyType, $context);
-                    $result[$k] = $this->navigator->accept($v, $entryType, $context);
-                }
+					$k = $this->navigator->accept($v[$this->currentMetadata->xmlKeyAttribute], $keyType, $context);
+					$result[$k] = $this->navigator->accept($v, $entryType, $context);
+				}
 
-                return $result;
+				return $result;
 
-            default:
-                throw new LogicException(sprintf('The array type does not support more than 2 parameters, but got %s.', json_encode($type['params'])));
-        }
-    }
+			default:
+				throw new LogicException(sprintf('The array type does not support more than 2 parameters, but got %s.', json_encode($type['params'])));
+		}
+	}
 
-    public function startVisitingObject(ClassMetadata $metadata, $object, array $type, Context $context)
-    {
-        $this->setCurrentObject($object);
+	public function startVisitingObject(ClassMetadata $metadata, $object, array $type, Context $context)
+	{
+		$this->setCurrentObject($object);
 
-        if (null === $this->result) {
-            $this->result = $this->currentObject;
-        }
-    }
+		if (null === $this->result) {
+			$this->result = $this->currentObject;
+		}
+	}
 
-    public function visitProperty(PropertyMetadata $metadata, $data, Context $context)
-    {
-        $name = $this->namingStrategy->translateName($metadata);
+	public function visitProperty(PropertyMetadata $metadata, $data, Context $context)
+	{
+		$name = $this->namingStrategy->translateName($metadata);
 
-        if (!$metadata->type) {
-            throw new RuntimeException(sprintf('You must define a type for %s::$%s.', $metadata->reflection->class, $metadata->name));
-        }
+		if (!$metadata->type) {
+			throw new RuntimeException(sprintf('You must define a type for %s::$%s.', $metadata->reflection->class, $metadata->name));
+		}
 
-        if ($metadata->xmlAttribute) {
-            if (isset($data[$name])) {
-                $v = $this->navigator->accept($data[$name], $metadata->type, $context);
-                $metadata->reflection->setValue($this->currentObject, $v);
-            }
+		if ($metadata->xmlAttribute) {
+			if (isset($data[$name])) {
+				$v = $this->navigator->accept($data[$name], $metadata->type, $context);
+			}
+		}
 
-            return;
-        }
+		else if ($metadata->xmlValue) {
+			$v = $this->navigator->accept($data, $metadata->type, $context);
+		}
 
-        if ($metadata->xmlValue) {
-            $v = $this->navigator->accept($data, $metadata->type, $context);
-            $metadata->reflection->setValue($this->currentObject, $v);
+		else if ($metadata->xmlCollection) {
+			$enclosingElem = $data;
+			if (!$metadata->xmlCollectionInline && isset($data->$name)) {
+				$enclosingElem = $data->$name;
+			}
 
-            return;
-        }
+			$this->setCurrentMetadata($metadata);
+			$v = $this->navigator->accept($enclosingElem, $metadata->type, $context);
+			$this->revertCurrentMetadata();
+		}
 
-        if ($metadata->xmlCollection) {
-            $enclosingElem = $data;
-            if (!$metadata->xmlCollectionInline && isset($data->$name)) {
-                $enclosingElem = $data->$name;
-            }
+		else if (isset($data->$name)) {
+			$v = $this->navigator->accept($data->$name, $metadata->type, $context);
+		}
 
-            $this->setCurrentMetadata($metadata);
-            $v = $this->navigator->accept($enclosingElem, $metadata->type, $context);
-            $this->revertCurrentMetadata();
-            $metadata->reflection->setValue($this->currentObject, $v);
+		if (isset($v)) {
+			if (null === $metadata->setter) {
+				$metadata->reflection->setValue($this->currentObject, $v);
+			}
+			else{
+				$this->currentObject->{$metadata->setter}($v);
+			}
+		}
+	}
 
-            return;
-        }
+	public function endVisitingObject(ClassMetadata $metadata, $data, array $type, Context $context)
+	{
+		$rs = $this->currentObject;
+		$this->revertCurrentObject();
 
-        if (!isset($data->$name)) {
-            return;
-        }
+		return $rs;
+	}
 
-        $v = $this->navigator->accept($data->$name, $metadata->type, $context);
+	public function setCurrentObject($object)
+	{
+		$this->objectStack->push($this->currentObject);
+		$this->currentObject = $object;
+	}
 
-        if (null === $metadata->setter) {
-            $metadata->reflection->setValue($this->currentObject, $v);
+	public function getCurrentObject()
+	{
+		return $this->currentObject;
+	}
 
-            return;
-        }
+	public function revertCurrentObject()
+	{
+		return $this->currentObject = $this->objectStack->pop();
+	}
 
-        $this->currentObject->{$metadata->setter}($v);
-    }
+	public function setCurrentMetadata(PropertyMetadata $metadata)
+	{
+		$this->metadataStack->push($this->currentMetadata);
+		$this->currentMetadata = $metadata;
+	}
 
-    public function endVisitingObject(ClassMetadata $metadata, $data, array $type, Context $context)
-    {
-        $rs = $this->currentObject;
-        $this->revertCurrentObject();
+	public function getCurrentMetadata()
+	{
+		return $this->currentMetadata;
+	}
 
-        return $rs;
-    }
+	public function revertCurrentMetadata()
+	{
+		return $this->currentMetadata = $this->metadataStack->pop();
+	}
 
-    public function setCurrentObject($object)
-    {
-        $this->objectStack->push($this->currentObject);
-        $this->currentObject = $object;
-    }
+	public function getResult()
+	{
+		return $this->result;
+	}
 
-    public function getCurrentObject()
-    {
-        return $this->currentObject;
-    }
+	/**
+	 * @param array<string> $doctypeWhitelist
+	 */
+	public function setDoctypeWhitelist(array $doctypeWhitelist)
+	{
+		$this->doctypeWhitelist = $doctypeWhitelist;
+	}
 
-    public function revertCurrentObject()
-    {
-        return $this->currentObject = $this->objectStack->pop();
-    }
-
-    public function setCurrentMetadata(PropertyMetadata $metadata)
-    {
-        $this->metadataStack->push($this->currentMetadata);
-        $this->currentMetadata = $metadata;
-    }
-
-    public function getCurrentMetadata()
-    {
-        return $this->currentMetadata;
-    }
-
-    public function revertCurrentMetadata()
-    {
-        return $this->currentMetadata = $this->metadataStack->pop();
-    }
-
-    public function getResult()
-    {
-        return $this->result;
-    }
-
-    /**
-     * @param array<string> $doctypeWhitelist
-     */
-    public function setDoctypeWhitelist(array $doctypeWhitelist)
-    {
-        $this->doctypeWhitelist = $doctypeWhitelist;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function getDoctypeWhitelist()
-    {
-        return $this->doctypeWhitelist;
-    }
+	/**
+	 * @return array<string>
+	 */
+	public function getDoctypeWhitelist()
+	{
+		return $this->doctypeWhitelist;
+	}
 }
