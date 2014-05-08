@@ -163,9 +163,17 @@ class XmlSerializationVisitor extends AbstractVisitor
         $keyAttributeName = (null !== $this->currentMetadata && null !== $this->currentMetadata->xmlKeyAttribute) ? $this->currentMetadata->xmlKeyAttribute : null;
 
         foreach ($data as $k => $v) {
+            if ('' !== $namespace = (string) $this->currentMetadata->xmlNamespace) {
+                if (!$prefix = $this->currentNode->lookupPrefix($namespace)) {
+                    $prefix = 'ns-'.  substr(sha1($namespace), 0, 8);
+                }
+            } else {
+                $prefix = false;
+            }
+
             $tagName = (null !== $this->currentMetadata && $this->currentMetadata->xmlKeyValuePairs && $this->isElementNameValid($k)) ? $k : $entryName;
 
-            $entryNode = $this->document->createElement($tagName);
+            $entryNode = $this->document->createElement(($prefix?$prefix.":":"").$tagName);
             $this->currentNode->appendChild($entryNode);
             $this->setCurrentNode($entryNode);
 
@@ -193,7 +201,17 @@ class XmlSerializationVisitor extends AbstractVisitor
                 $rootNamespace = $this->defaultRootNamespace;
             }
             if ($rootNamespace) {
-                $this->currentNode = $this->document->createElementNS($rootNamespace, $rootName);
+                $prefix = false;
+                if(!empty($metadata->xmlNamespaces)) {
+                    foreach($metadata->xmlNamespaces as $nsKey => $namespace) {
+                        if($namespace == $rootNamespace) {
+                            $prefix = $nsKey;
+                            break;
+                        }
+                    }
+                }
+
+                $this->currentNode = $this->document->createElementNS($rootNamespace, ($prefix?$prefix.":":"").$rootName);
             } else {
                 $this->currentNode = $this->document->createElement($rootName);
             }
@@ -251,7 +269,6 @@ class XmlSerializationVisitor extends AbstractVisitor
             }
 
             $this->currentNode->appendChild($node);
-
             return;
         }
 
@@ -278,7 +295,6 @@ class XmlSerializationVisitor extends AbstractVisitor
                     $this->currentNode->setAttribute($key, $node->nodeValue);
                 }
             }
-
             return;
         }
 
@@ -321,6 +337,8 @@ class XmlSerializationVisitor extends AbstractVisitor
 
     public function getResult()
     {
+        echo $this->document->saveXML();
+        die();
         return $this->document->saveXML();
     }
 
