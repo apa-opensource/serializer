@@ -337,8 +337,6 @@ class XmlSerializationVisitor extends AbstractVisitor
 
     public function getResult()
     {
-        echo $this->document->saveXML();
-        die();
         return $this->document->saveXML();
     }
 
