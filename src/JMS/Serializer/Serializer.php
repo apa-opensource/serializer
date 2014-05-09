@@ -95,6 +95,8 @@ class Serializer implements SerializerInterface
 
     public function deserialize($data, $type, $format, DeserializationContext $context = null)
     {
+        $data = $this->removeNamespaces($data);
+
         if ( ! $this->deserializationVisitors->containsKey($format)) {
             throw new UnsupportedFormatException(sprintf('The format "%s" is not supported for deserialization.', $format));
         }
@@ -119,6 +121,29 @@ class Serializer implements SerializerInterface
         }
 
         return $visitorResult;
+    }
+
+    /**
+     * Removes all namespaces from given XML
+     *
+     * @param $data
+     * @return mixed
+     */
+    public function removeNamespaces($data)
+    {
+        $namespaces = array(
+            "mn",
+            "pd",
+            "seo",
+            "co"
+        );
+
+        foreach($namespaces as $nkey => $namespace) {
+            $data = str_replace("<".$namespace.":", "<", $data);
+            $data = str_replace("</".$namespace.":", "</", $data);
+        }
+
+        return $data;
     }
 
     /**
