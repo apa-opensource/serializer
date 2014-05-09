@@ -276,7 +276,8 @@ class XmlDeserializationVisitor extends AbstractVisitor
             return;
         }
 
-        if ('' !== $namespace = (string) $metadata->xmlNamespace) {
+//        if ('' !== $namespace = (string) $metadata->xmlNamespace) {
+        if (false) {
             $registeredNamespaces = $data->getDocNamespaces();
             if (false === $prefix = array_search($namespace, $registeredNamespaces)) {
                 $prefix = uniqid('ns-');
