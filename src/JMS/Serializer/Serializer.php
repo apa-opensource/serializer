@@ -132,10 +132,11 @@ class Serializer implements SerializerInterface
     public function removeNamespaces($data)
     {
         $namespaces = array(
-            "mn",
-            "pd",
-            "seo",
-            "co"
+            'mn',
+            'pd',
+            'seo',
+            'co',
+            'cat'
         );
 
         foreach($namespaces as $nkey => $namespace) {
