@@ -133,6 +133,7 @@ class Serializer implements SerializerInterface
     {
         $namespaces = array(
             'mn',
+            'od',
             'pd',
             'seo',
             'co',
