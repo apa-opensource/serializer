@@ -139,6 +139,7 @@ class Serializer implements SerializerInterface
             'co',
             'cat',
             'fw',
+            'cmn',
             'cu'
         );
 
