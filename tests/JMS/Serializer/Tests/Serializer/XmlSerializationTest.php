@@ -23,6 +23,7 @@ use JMS\Serializer\Handler\DateHandler;
 use JMS\Serializer\Handler\HandlerRegistry;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\Serializer;
+use JMS\Serializer\Tests\Fixtures\Discriminator\ObjectWithXmlAttributeDiscriminatorChild;
 use JMS\Serializer\Tests\Fixtures\InvalidUsageOfXmlValue;
 use JMS\Serializer\Exception\InvalidArgumentException;
 use JMS\Serializer\Tests\Fixtures\PersonCollection;
@@ -233,6 +234,12 @@ class XmlSerializationTest extends BaseSerializationTest
 
 
         $this->assertEquals($this->getContent('simple_subclass_object'), $this->serialize($childObject));
+    }
+
+    public function testDiscriminatorAsXmlAttribute()
+    {
+        $xml = simplexml_load_string($this->serialize(new ObjectWithXmlAttributeDiscriminatorChild()));
+        $this->assertEquals('type="child"', trim($xml->xpath('//result/@type')[0]->saveXML()));
     }
 
     private function xpathFirstToString(\SimpleXMLElement $xml, $xpath)
