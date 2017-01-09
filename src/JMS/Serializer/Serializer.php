@@ -141,7 +141,8 @@ class Serializer implements SerializerInterface
             'fw',
             'cmn',
             'cu',
-            'evt'
+            'evt',
+            'attr',
         );
 
         foreach($namespaces as $nkey => $namespace) {
